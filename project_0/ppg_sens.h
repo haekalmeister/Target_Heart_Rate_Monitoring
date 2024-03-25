@@ -5,10 +5,9 @@
 class ppg_data {
 public:
   MAX30105 particleSensor;
-
-  ppg_data() 
+  ppg_data(int rate_size) 
   {
-
+    this->RATE_SIZE = rate_size;
   }
 
   void start() {
@@ -48,11 +47,11 @@ public:
   }
 
   float get_bpm(){
-    return this.beatsPerMinute;    
+    return this->beatsPerMinute;    
   }
 
   int get_beatAvg(){
-    return this.beatAvg;
+    return this->beatAvg;
   }
 
 private:
@@ -62,7 +61,7 @@ private:
   long lastBeat = 0;  //Time at which the last beat occurred
   float beatsPerMinute;
   int beatAvg;
-}
+};
 
 /*
 const byte RATE_SIZE = 4; //Increase this for more averaging. 4 is good.
