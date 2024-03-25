@@ -3,17 +3,30 @@
 #include "heartRate.h"
 
 class ppg_data {
+private:
+  byte RATE_SIZE;  //Increase this for more averaging. 4 is good.
+  byte* rates;     //Array of heart rates
+  byte rateSpot = 0;
+  long lastBeat = 0;  //Time at which the last beat occurred
+  float beatsPerMinute;
+  int beatAvg;
+
 public:
   MAX30105 particleSensor;
-  ppg_data(int rate_size) 
+
+  ppg_data(int rate_size)  //constructor
   {
     this->RATE_SIZE = rate_size;
+    this->rates = new byte[rate_size];
+
+    for (int i = 0; i < rate_size; i++)
+      this->rates[i] = 0;
   }
 
   void start() {
     while (!particleSensor.begin(Wire, I2C_SPEED_FAST))  //Use default I2C port, 400kHz speed
     {
-      Serial.println("MAX30105 was not found. Please check wiring/power. ");
+      Serial.println("Put your Finger on Sensor ");
       delay(500);
     }
 
@@ -35,7 +48,7 @@ public:
 
       if (this->beatsPerMinute < 255 && this->beatsPerMinute > 20) {
         rates[this->rateSpot++] = (byte)this->beatsPerMinute;  //Store this reading in the array
-        this->rateSpot %= this->RATE_SIZE;                          //Wrap variable
+        this->rateSpot %= this->RATE_SIZE;                     //Wrap variable
 
         //Take average of readings
         this->beatAvg = 0;
@@ -46,31 +59,11 @@ public:
     }
   }
 
-  float get_bpm(){
-    return this->beatsPerMinute;    
+  float get_bpm() {
+    return this->beatsPerMinute;
   }
 
-  int get_beatAvg(){
+  int get_beatAvg() {
     return this->beatAvg;
   }
-
-private:
-  byte RATE_SIZE = 4;  //Increase this for more averaging. 4 is good.
-  byte rates[RATE_SIZE];     //Array of heart rates
-  byte rateSpot = 0;
-  long lastBeat = 0;  //Time at which the last beat occurred
-  float beatsPerMinute;
-  int beatAvg;
 };
-
-/*
-const byte RATE_SIZE = 4; //Increase this for more averaging. 4 is good.
-byte rates[RATE_SIZE]; //Array of heart rates
-byte rateSpot = 0;
-long lastBeat = 0; //Time at which the last beat occurred
-
-float beatsPerMinute;
-int beatAvg;
-
-
-*/
