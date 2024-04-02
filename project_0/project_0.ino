@@ -1,20 +1,29 @@
 #include "ppg_sens.h"
 #include "oled_.h"
+#include <string>
+
+
+int age = 0;
+
+
+//GLOBAL OBJECT & VARIABLE
+ppg_data ppg(4);
+oled oled(0x3C);
+
+
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  ppg_data ppg(4);
-  oled oled(0x3C);
+  Serial.println("BEGIN...");
 
   oled.start();
   oled.clear();
   oled.screen_start();
+  oled.age_select(age);
 
   delay(2000);
   oled.clear();
-  
-
 
   ppg.start();
   while (1) {
@@ -32,6 +41,6 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  Serial.println("HELLO");
-  delay(500);
+
+  // delay(500);
 }
