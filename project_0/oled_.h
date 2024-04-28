@@ -80,6 +80,7 @@ public:
       display.print(age);
       display.display();
       }
+      return age;
   }
 
   void screen_bpm(int bpm){

@@ -2,6 +2,7 @@
 #include "MAX30105.h"
 #include "heartRate.h"
 
+
 class ppg_data {
 private:
   byte RATE_SIZE;  //Increase this for more averaging. 4 is good.
@@ -10,6 +11,14 @@ private:
   long lastBeat = 0;  //Time at which the last beat occurred
   float beatsPerMinute;
   int beatAvg;
+  void clear_data() {
+    // Reset variables used for storing and averaging heart rate data
+    for (byte x = 0; x < RATE_SIZE; x++) {
+      rates[x] = 0;
+    }
+    rateSpot = 0;
+    beatAvg = 0;
+  }
 
 public:
   MAX30105 particleSensor;
@@ -36,6 +45,33 @@ public:
 
     Serial.println("PPG SENSOR START");
   }
+
+  int get_restingHeartRate() {
+    // Clear existing data to avoid including previous readings
+    clear_data();
+
+    // Start time for the 15-second measurement window
+    long startTime = millis();
+
+    // Loop for 15 seconds, collecting and averaging heart rate samples
+    int totalBeats = 0;
+    while (millis() - startTime < 15000) {
+      run();  // Call the existing run() function to process sensor data
+      if (get_bpm() > 0) {  // Check if a valid heart rate was detected
+        totalBeats++;
+      }
+      delay(100);  // Introduce a small delay between readings
+    }
+
+    // Calculate and return the resting heart rate (average beats over 15s)
+    if (totalBeats > 0) {
+      return totalBeats * 4;  // Convert total beats to BPM (assuming 15s window)
+    } else {
+      return 0;  // Return 0 if no heartbeats were detected
+    }
+  }
+
+
 
   void run() {
     long irValue = particleSensor.getIR();
@@ -65,5 +101,10 @@ public:
 
   int get_beatAvg() {
     return this->beatAvg;
+  }
+
+  int get_THR(int age){
+    int totalbeats = get_restingHeartRate();
+    //rumus yg pake umur
   }
 };
