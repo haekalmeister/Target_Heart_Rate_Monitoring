@@ -50,7 +50,7 @@ public:
     display.display();
   }
 
-  void age_select(int age){
+  int age_select(int age){
     display.clearDisplay();
     while(ageSelect){
       button4.setDebounceTime(DEBOUNCE_TIME);
@@ -95,6 +95,15 @@ public:
     this->clear();
     display.setCursor(x, y);
     display.print(num);
+    display.display();
+  }
+
+  void display_thr(int thr){
+    this->clear();
+    display.setCursor(1, 10);
+    display.setTextSize(2);
+    display.print("THR : ");
+    display.println(thr);
     display.display();
   }
 };
