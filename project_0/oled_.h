@@ -1,6 +1,19 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <ezButton.h>
+#define button_1 26
+#define button_2 18
+#define button_3 19
+#define button_4 23
+
+#define DEBOUNCE_TIME 50
+
+ ezButton button4(button_4);
+ ezButton button3(button_3);
+ ezButton button1(button_1);
+
+bool ageSelect = true;
 
 class oled {
 private:
@@ -37,11 +50,69 @@ public:
     display.display();
   }
 
+  int age_select(int age){
+    display.clearDisplay();
+    while(ageSelect){
+      button4.setDebounceTime(DEBOUNCE_TIME);
+      button3.setDebounceTime(DEBOUNCE_TIME);
+      button1.setDebounceTime(DEBOUNCE_TIME);
+      button4.loop();
+      button3.loop();
+      button1.loop();
+      int btn4State = button4.getState();
+      int btn3State = button3.getState();
+      int btn1State = button1.getState();
+      if (button4.isPressed()) { // Button 1 pressed (add 1)
+      age++;
+      } else if (button3.isPressed()) { // Button 2 pressed (add 10)
+      age += 10;
+      }
+      if (button1.isPressed()) { // Button 3 pressed (proceed)
+        ageSelect = false;
+      }
+
+    // Update and display age on OLED
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.setTextSize(2); // Adjust text size as needed
+      display.print("Your Age:");
+      display.setCursor(0, 16); // Adjust position as needed
+      display.print(age);
+      display.display();
+      }
+      return age;
+  }
+
   void screen_bpm(int bpm){
+    this->clear();
     display.setCursor(1, 10);
     display.setTextSize(2);
     display.print("BPM : ");
     display.println(bpm);
+    display.display();
+  }
+
+  void determining_thr(){
+    this->clear();
+    display.setCursor(1, 5);
+    display.setTextSize(2);
+    display.print("Determining THR");
+    display.display();
+  }
+
+  void display_num(int x, int y, int num){
+    this->clear();
+    display.setCursor(x, y);
+    display.print(num);
+    display.display();
+  }
+
+  void display_thr(int thr){
+    this->clear();
+    display.setCursor(1, 10);
+    display.setTextSize(2);
+    display.print("THR : ");
+    display.println(thr);
     display.display();
   }
 };
