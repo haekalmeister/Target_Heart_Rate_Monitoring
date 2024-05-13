@@ -2,62 +2,76 @@
 #include "oled_.h"
 #include <string>
 #include <VibrationMotor.h>
-
-//GLOBAL OBJECT & VARIABLE
+// GLOBAL OBJECT & VARIABLE
 ppg_data ppg(4);
 oled oled(0x3C);
 int age = 0;
+int thr_top = 0;
+int thr_bottom = 0;
 int count_threshold = 0;
+int count_below_threshold = 0;
 bool buzzer_status = false;
-int thr = 0;
+const int motorPin = 17;
+const int threshold_count = 15;
+bool motor_active = false;
 
+VibrationMotor myVibrationMotor(motorPin);
 
-void setup() {
-  // put your setup code here, to run once:
+void setup()
+{
   Serial.begin(115200);
   Serial.println("BEGIN...");
 
   oled.start();
   oled.clear();
-  oled.screen_start();
-  oled.age_select(age);
-  delay(2000);
+  age = oled.age_select(age);
+  ppg.set_age(age);
   ppg.start();
-  oled.determining_thr();
-  int thr = ppg.get_THR(age);
-  oled.display_thr(thr);
+  ppg.set_thr(); // Calculate thresholds
+
+  int thr_bottom = ppg.get_thr_bottom();
+  int thr_top = ppg.get_thr_top();
+
+  Serial.print("THR Bottom: ");
+  Serial.println(thr_bottom);
+  Serial.print("THR Top: ");
+  Serial.println(thr_top);
+
+  oled.display_thr(thr_bottom, thr_top); // Display thresholds on OLED
+
   delay(2000);
   oled.clear();
 }
 
-void loop() {
+void loop()
+{
   // put your main code here, to run repeatedly:
   unsigned long start = millis();
-  ppg.run();
+  ppg.get_sensor_value();
   float bpm = ppg.get_beatAvg();
-  Serial.print("|| Average BPM : ");
-  Serial.println(ppg.get_beatAvg());
 
-  if (buzzer_status == false) {
-    ppg.get_beatAvg() > thr ? count_threshold++ : count_threshold = 0;
+  // Display heart rate on Serial Monitor
+  Serial.print("Heart Rate (BPM): ");
+  Serial.println(bpm);
 
+  // Check if heart rate is below thr_top
+  if (bpm < thr_top) {
+    count_below_threshold++; // Increment counter for consecutive values below thr_top
   } else {
-    ppg.get_beatAvg() < thr ? count_threshold++ : count_threshold = 0;
+    count_below_threshold = 0; // Reset counter if heart rate exceeds thr_top
   }
 
-  if (count_threshold > 10) {
-    count_threshold = 0;
-    buzzer_status = !buzzer_status;
-    if (buzzer_status) {
-      //buzzer on
-    } else {
-      //buzzer off
-    }
+  // Check if motor should be turned on/off based on consecutive values below thr_top
+  if (count_below_threshold >= threshold_count && !motor_active) {
+    myVibrationMotor.on(); // Turn on vibration motor
+    Serial.println("Vibration Motor ON");
+    motor_active = true; // Set motor flag to active
+  } else if (count_below_threshold < threshold_count && motor_active) {
+    myVibrationMotor.off(); // Turn off vibration motor
+    Serial.println("Vibration Motor OFF");
+    motor_active = false; // Set motor flag to inactive
   }
 
   oled.screen_bpm(bpm);
   oled.clear();
-
-  int delay_time = 1000 - (millis() - start);
-  delay(delay_time);
 }

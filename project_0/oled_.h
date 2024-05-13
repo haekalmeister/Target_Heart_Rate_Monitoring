@@ -80,23 +80,15 @@ public:
       display.print(age);
       display.display();
       }
+      this->calculating();
       return age;
   }
 
   void screen_bpm(int bpm){
-    this->clear();
     display.setCursor(1, 10);
     display.setTextSize(2);
     display.print("BPM : ");
     display.println(bpm);
-    display.display();
-  }
-
-  void determining_thr(){
-    this->clear();
-    display.setCursor(1, 5);
-    display.setTextSize(2);
-    display.print("Determining THR");
     display.display();
   }
 
@@ -107,12 +99,24 @@ public:
     display.display();
   }
 
-  void display_thr(int thr){
+  void display_thr(int thr_bottom, int thr_top) {
+  this->clear();
+  display.setCursor(1, 10);
+  display.setTextSize(0.5);
+  display.print("THR Bottom: ");
+  display.println(thr_bottom);
+
+  display.setCursor(1, 30);
+  display.print("THR Top: ");
+  display.println(thr_top);
+
+  display.display();
+}
+  void calculating(){
     this->clear();
-    display.setCursor(1, 10);
-    display.setTextSize(2);
-    display.print("THR : ");
-    display.println(thr);
+    display.setCursor(5,10);
+    display.setTextSize(1);
+    display.print("CALCULATING...");
     display.display();
   }
 };
