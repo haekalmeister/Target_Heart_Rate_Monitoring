@@ -12,9 +12,11 @@ private:
   float beatsPerMinute;
   int beatAvg;
   int age = 0xFF;
+  int gender = 0;
   int rhr = 0;
   int thr_top = 0;
   int thr_bottom = 0;
+  int hrmax = 0;
 
   // -- INTERNAL PRIVATE METHOD -- //
   void clear_data()
@@ -68,16 +70,24 @@ int get_restingHeartRate() {
   }
 }
 
-
-
-
-
 int calculate_THR_Bottom() {
-  return (50 * ((220 - this->age) - this->rhr) / 100) + this->rhr;
+  if (this->gender == 0){
+    hrmax = 206.9 - (0.67 * this->age);
+    return (hrmax - this->rhr) * 0.5 + this->rhr;
+  }else{
+    hrmax = 206 - (0.88 * this->age);
+    return (hrmax - this->rhr) * 0.5 + this->rhr;
+  }
 }
 
 int calculate_THR_Top() {
-  return (70 * ((220 - this->age) - this->rhr) / 100) + this->rhr;
+  if (this->gender == 0){
+    hrmax = 206.9 - (0.67 * this->age);
+    return (hrmax - this->rhr) * 0.7 + this->rhr;
+  }else{
+    hrmax = 206 - (0.88 * this->age);
+    return (hrmax - this->rhr) * 0.7 + this->rhr;
+  }
 }
 
 
@@ -136,6 +146,10 @@ public:
   void set_age(int age)
   {
     this->age = age;
+  }
+
+  void set_gender(int gender){
+    this->gender = gender;
   }
 
   // BEGIN PROCESS TO COUNTING THR

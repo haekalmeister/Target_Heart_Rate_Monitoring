@@ -50,6 +50,37 @@ public:
     display.display();
   }
 
+  int gender_select(int gender) {
+    display.clearDisplay();
+    bool genderSelect = true;
+
+    while (genderSelect) {
+        button4.setDebounceTime(DEBOUNCE_TIME); // button to toggle gender
+        button1.setDebounceTime(DEBOUNCE_TIME); // button to confirm selection
+        button4.loop();
+        button1.loop();
+        int btn4State = button4.getState();
+        int btn1State = button1.getState();
+
+        if (button4.isPressed()) { // Toggle gender
+            gender = (gender == 0) ? 1 : 0;
+        }
+        if (button1.isPressed()) { // Confirm selection
+            genderSelect = false;
+        }
+
+        // Update and display gender on OLED
+        display.clearDisplay();
+        if (gender == 0) {
+            display_male();
+        } else {
+            display_female();
+        }
+    }
+    this->calculating();
+    return gender;
+}
+
   int age_select(int age){
     display.clearDisplay();
     while(ageSelect){
@@ -84,13 +115,25 @@ public:
       return age;
   }
 
-  void screen_bpm(int bpm){
+  void screen_bpm(int bpm, int thr_bottom, int thr_top) {
+    display.clearDisplay();  // Clear any previous content on the display
+    
+    // Display BPM
     display.setCursor(1, 10);
     display.setTextSize(2);
-    display.print("BPM : ");
+    display.print("BPM: ");
     display.println(bpm);
-    display.display();
-  }
+    
+    // Display THR Zone
+    display.setCursor(1, 40);  // Adjust cursor position to below BPM
+    display.setTextSize(1.9);
+    display.print("THR: ");
+    display.print(thr_bottom);
+    display.print(" - ");
+    display.println(thr_top);
+    
+    display.display();  // Display the updated content
+}
 
   void display_num(int x, int y, int num){
     this->clear();
@@ -100,17 +143,19 @@ public:
   }
 
   void display_thr(int thr_bottom, int thr_top) {
-  this->clear();
-  display.setCursor(1, 10);
-  display.setTextSize(0.5);
-  display.print("THR Bottom: ");
-  display.println(thr_bottom);
-
-  display.setCursor(1, 30);
-  display.print("THR Top: ");
-  display.println(thr_top);
-
-  display.display();
+    display.clearDisplay();  // Clear the display
+    display.setCursor(1, 10);
+    display.setTextSize(1);  // Text size 1 for small text
+    display.print("THR ZONE:");
+    
+    display.setCursor(1, 30);  // Move cursor to a new line for THR values
+    display.setTextSize(2);    // Larger text size for the THR values
+    
+    display.print(thr_bottom);
+    display.print(" - ");
+    display.print(thr_top);
+    
+    display.display();  // Display the updated content
 }
   void calculating(){
     this->clear();
@@ -119,4 +164,21 @@ public:
     display.print("CALCULATING...");
     display.display();
   }
+
+  void display_male(){
+    this->clear();
+    display.setCursor(1, 10);
+    display.setTextSize(2);
+    display.print("> Male\n");
+    display.print("Female");
+    display.display();
+  }
+  void display_female(){
+    this->clear();
+    display.setCursor(1, 10);
+    display.setTextSize(2);
+    display.print("Male\n");
+    display.print("> Female");
+    display.display();
+  }  
 };
