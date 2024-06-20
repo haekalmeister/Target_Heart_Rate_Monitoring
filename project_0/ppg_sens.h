@@ -30,45 +30,75 @@ private:
     beatAvg = 0;
   }
 
-int get_restingHeartRate() {
-  const unsigned long measurementDuration = 15000; // 15 seconds
-  const unsigned long startTime = millis();
-
-  // Reset variables for data collection
-  int totalBeats = 0;
-  int validBeatsSum = 0;
-
-  Serial.println("Measuring resting heart rate...");
-
-  // Collect heart rate data for the specified duration
-  while (millis() - startTime < measurementDuration) {
-    get_sensor_value(); // Process sensor data to detect heart rate
-    int currentBPM = this->beatAvg;
-
-    // Print current heart rate reading for debugging
-    Serial.print("Current BPM: ");
-    Serial.println(currentBPM);
-
-    // Check if current heart rate is valid (above 20 BPM)
-    if (currentBPM > 20) {
-      totalBeats++;
-      validBeatsSum += currentBPM;
+  void start()
+  {
+    while (!particleSensor.begin(Wire, I2C_SPEED_FAST)) // Use default I2C port, 400kHz speed
+    {
+      Serial.println("Put your Finger on Sensor ");
+      delay(500);
     }
+
+    particleSensor.setup();                    // Configure sensor with default settings
+    particleSensor.setPulseAmplitudeRed(0x0A); // Turn Red LED to low to indicate sensor is running
+    particleSensor.setPulseAmplitudeGreen(0);  // Turn off Green LED
+
+    Serial.println("PPG SENSOR START");
   }
 
-  // Calculate resting heart rate based on valid heart rate readings
-  if (totalBeats > 0) {
-    int restingBPM = validBeatsSum / totalBeats; // Calculate average BPM
-    Serial.print("Total Valid Heartbeats: ");
-    Serial.println(totalBeats);
-    Serial.print("Resting Heart Rate (BPM): ");
-    Serial.println(restingBPM);
+  int get_restingHeartRate() {
+    const unsigned long measurementDuration = 30000; // 30 seconds for more stable measurement
+    const unsigned long startTime = millis();
+    this->start();
+
+    // Dynamic memory allocation for data collection
+    const int maxReadings = 1800; // Assuming max 60 readings per second for 30 seconds
+    int* bpmReadings = new int[maxReadings];
+    int readingIndex = 0;
+
+    Serial.println("Measuring resting heart rate...");
+
+    // Collect heart rate data for the specified duration
+    while (millis() - startTime < measurementDuration) {
+        get_sensor_value(); // Process sensor data to detect heart rate
+        int currentBPM = this->beatAvg;
+
+        // Print current heart rate reading for debugging
+        Serial.print("Current BPM: ");
+        Serial.println(currentBPM);
+
+        // Check if current heart rate is valid (above 20 BPM)
+        if (currentBPM > 20 && readingIndex < maxReadings) {
+            bpmReadings[readingIndex++] = currentBPM;
+        }
+    }
+
+    int restingBPM = 0;
+
+    // Calculate resting heart rate based on valid heart rate readings
+    if (readingIndex > 0) {
+        // Sort the readings to find the median
+        std::sort(bpmReadings, bpmReadings + readingIndex);
+
+        if (readingIndex % 2 == 0) {
+            restingBPM = (bpmReadings[readingIndex / 2 - 1] + bpmReadings[readingIndex / 2]) / 2;
+        } else {
+            restingBPM = bpmReadings[readingIndex / 2];
+        }
+
+        Serial.print("Total Valid Heartbeats: ");
+        Serial.println(readingIndex);
+        Serial.print("Resting Heart Rate (BPM): ");
+        Serial.println(restingBPM);
+    } else {
+        Serial.println("No valid heartbeats detected during measurement.");
+    }
+
+    // Free dynamically allocated memory
+    delete[] bpmReadings;
+
     return restingBPM;
-  } else {
-    Serial.println("No valid heartbeats detected during measurement.");
-    return 0; // Return 0 if no valid heart rate readings were obtained
-  }
 }
+
 
 int calculate_THR_Bottom() {
   if (this->gender == 0){
@@ -103,20 +133,7 @@ public:
       this->rates[i] = 0;
   }
 
-  void start()
-  {
-    while (!particleSensor.begin(Wire, I2C_SPEED_FAST)) // Use default I2C port, 400kHz speed
-    {
-      Serial.println("Put your Finger on Sensor ");
-      delay(500);
-    }
 
-    particleSensor.setup();                    // Configure sensor with default settings
-    particleSensor.setPulseAmplitudeRed(0x0A); // Turn Red LED to low to indicate sensor is running
-    particleSensor.setPulseAmplitudeGreen(0);  // Turn off Green LED
-
-    Serial.println("PPG SENSOR START");
-  }
 
   void get_sensor_value()
   {

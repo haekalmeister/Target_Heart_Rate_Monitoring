@@ -11,6 +11,7 @@
 
  ezButton button4(button_4);
  ezButton button3(button_3);
+ ezButton button2(button_2);
  ezButton button1(button_1);
 
 bool ageSelect = true;
@@ -86,17 +87,22 @@ public:
     while(ageSelect){
       button4.setDebounceTime(DEBOUNCE_TIME);
       button3.setDebounceTime(DEBOUNCE_TIME);
+      button2.setDebounceTime(DEBOUNCE_TIME);
       button1.setDebounceTime(DEBOUNCE_TIME);
       button4.loop();
       button3.loop();
+      button2.loop();
       button1.loop();
       int btn4State = button4.getState();
       int btn3State = button3.getState();
+      int btn2State = button2.getState();
       int btn1State = button1.getState();
       if (button4.isPressed()) { // Button 1 pressed (add 1)
       age++;
       } else if (button3.isPressed()) { // Button 2 pressed (add 10)
       age += 10;
+      } else if (button2.isPressed()){
+        ESP.restart();
       }
       if (button1.isPressed()) { // Button 3 pressed (proceed)
         ageSelect = false;
@@ -115,23 +121,47 @@ public:
       return age;
   }
 
-  void screen_bpm(int bpm, int thr_bottom, int thr_top) {
+void screen_bpm(int bpm, int thr_bottom, int thr_top, unsigned long elapsedTime, bool status) {
     display.clearDisplay();  // Clear any previous content on the display
-    
+
+    // Convert elapsed time to minutes and seconds
+    unsigned int minutes = elapsedTime / 60;
+    unsigned int seconds = elapsedTime % 60;
+
     // Display BPM
-    display.setCursor(1, 10);
+    display.setCursor(0, 0);
     display.setTextSize(2);
     display.print("BPM: ");
     display.println(bpm);
-    
+
     // Display THR Zone
-    display.setCursor(1, 40);  // Adjust cursor position to below BPM
-    display.setTextSize(1.9);
+    display.setCursor(0, 20);  // Adjust cursor position to below BPM
+    display.setTextSize(1);
     display.print("THR: ");
     display.print(thr_bottom);
     display.print(" - ");
     display.println(thr_top);
+
+    // Display elapsed time
+    if(status == true){
+    display.setCursor(0, 40);  // Adjust cursor position for elapsed time
+    display.setTextSize(1.5);
+    display.print(minutes);
+    display.print("m ");
+    display.print(seconds);
+    display.println("s");
+    display.print("Vibration ON");
+    }else{
+    display.setCursor(0, 40);  // Adjust cursor position for elapsed time
+    display.setTextSize(1.5);
+    display.print(minutes);
+    display.print("m ");
+    display.print(seconds);
+    display.println("s");
+    display.print("Vibration OFF");
+    }
     
+
     display.display();  // Display the updated content
 }
 
@@ -142,26 +172,32 @@ public:
     display.display();
   }
 
-  void display_thr(int thr_bottom, int thr_top) {
+void display_thr(int thr, int thr_bottom, int thr_top) {
     display.clearDisplay();  // Clear the display
-    display.setCursor(1, 10);
+    
+    display.setCursor(0, 0);
+    display.setTextSize(1);
+    display.print("RHR: ");
+    display.print(thr);  // Correctly display the RHR value
+
+    display.setCursor(0, 20);
     display.setTextSize(1);  // Text size 1 for small text
     display.print("THR ZONE:");
-    
-    display.setCursor(1, 30);  // Move cursor to a new line for THR values
+
+    display.setCursor(0, 40);  // Move cursor to a new line for THR values
     display.setTextSize(2);    // Larger text size for the THR values
-    
     display.print(thr_bottom);
     display.print(" - ");
     display.print(thr_top);
-    
+
     display.display();  // Display the updated content
 }
+
   void calculating(){
     this->clear();
     display.setCursor(5,10);
-    display.setTextSize(1);
-    display.print("CALCULATING...");
+    display.setTextSize(2);
+    display.print("MEASURING\n30 sec...");
     display.display();
   }
 
@@ -180,5 +216,17 @@ public:
     display.print("Male\n");
     display.print("> Female");
     display.display();
-  }  
+  }
+  void display_vibrationstatus(bool status){
+    this->clear();
+    display.setCursor(1,10);
+    display.setTextSize(2);
+    if (status == true){
+      display.print("Vibration ON");
+    }
+    else{
+      display.print("Vibration OFF");
+    }
+    display.display();
+  }
 };
