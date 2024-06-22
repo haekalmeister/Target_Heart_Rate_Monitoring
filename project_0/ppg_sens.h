@@ -98,6 +98,31 @@ private:
 
     return restingBPM;
 }
+int get_restingHeartRate_avg() {
+  const unsigned long measurementDuration = 30000; // 30 seconds for more stable measurement
+  const unsigned long startTime = millis();
+  this->start();
+
+  Serial.println("Measuring resting heart rate...");
+  while (millis() - startTime < measurementDuration) {
+    get_sensor_value(); 
+    int currentBPM = this->beatAvg;
+
+   
+    Serial.print("Current BPM: ");
+    Serial.println(currentBPM);
+  }
+
+  int restingBPM = 0;
+
+  
+  restingBPM = this->beatAvg; // Use the last beatAvg value
+
+  if (restingBPM == 0) {
+    Serial.println("No valid heartbeats detected during measurement.");
+  }
+  return restingBPM;
+}
 
 
 int calculate_THR_Bottom() {
@@ -176,7 +201,7 @@ public:
     return; // Exit if age is not set
   }
 
-  this->rhr = get_restingHeartRate(); // Calculate and set resting heart rate
+  this->rhr = get_restingHeartRate_avg(); // Calculate and set resting heart rate
 
   // Calculate and set THR values based on age and resting heart rate
   this->thr_bottom = calculate_THR_Bottom();
