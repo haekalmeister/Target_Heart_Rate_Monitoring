@@ -6,6 +6,7 @@
 
 #define button_2 18
 #define DEBOUNCE_TIME 50
+#define MA_WINDOW_SIZE 10 // Size of the moving average window
 
 extern ezButton button2;
 
@@ -28,6 +29,16 @@ const unsigned long updateInterval = 1000;
 unsigned long startTime;
 unsigned long elapsedTime;
 bool inTHRZone = false; // Whether currently in the THR zone
+
+int bpmBuffer[MA_WINDOW_SIZE];
+int bpmBufferIndex = 0;
+int bpmBufferCount = 0;
+
+// Kalman filter variables
+float kalman_estimate = 0.0;
+float kalman_error = 1.0;
+const float kalman_q = 0.1; // Process noise covariance
+const float kalman_r = 1.0; // Measurement noise covariance
 
 VibrationMotor myVibrationMotor(motorPin);
 
@@ -58,6 +69,24 @@ void setup() {
   delay(5000);
   oled.clear();
   startTime = millis();
+
+  // Initialize the BPM buffer
+  for (int i = 0; i < MA_WINDOW_SIZE; i++) {
+    bpmBuffer[i] = 0;
+  }
+}
+
+int calculateMovingAverage(int newBpm) {
+  bpmBuffer[bpmBufferIndex] = newBpm;
+  bpmBufferIndex = (bpmBufferIndex + 1) % MA_WINDOW_SIZE;
+  bpmBufferCount = bpmBufferCount < MA_WINDOW_SIZE ? bpmBufferCount + 1 : MA_WINDOW_SIZE;
+
+  int sum = 0;
+  for (int i = 0; i < bpmBufferCount; i++) {
+    sum += bpmBuffer[i];
+  }
+
+  return sum / bpmBufferCount;
 }
 
 void loop() {
@@ -78,10 +107,13 @@ void loop() {
     // Update the last update time
     lastUpdateTime = currentTime;
     // Calculate BPM
-    float bpm = ppg.get_beatAvg();
+    int bpm = round(ppg.get_beatAvg());
+    bpm = calculateMovingAverage(bpm); // Apply the moving average filter
+    
+
     // Display heart rate on Serial Monitor
-    Serial.print("Heart Rate (BPM): ");
-    Serial.println(bpm);
+    //Serial.print("Heart Rate (BPM): ");
+    //Serial.println(bpm);
 
     // Get THR values from ppg_data instance (static for testing, replace with dynamic values)
     int thr_top = ppg.get_thr_top();   // Adjust as needed
@@ -114,5 +146,6 @@ void loop() {
     oled.screen_bpm(bpm, thr_bottom, thr_top, elapsedTime, motor_active);
     // Clear the OLED for the next update
     oled.clear();
-  } delay(10);
+  }
+  delay(10);
 }
