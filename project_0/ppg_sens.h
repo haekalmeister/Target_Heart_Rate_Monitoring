@@ -19,7 +19,33 @@ private:
   float kalman_estimate = 0.0;
   float kalman_error = 1.0;
   const float kalman_q = 0.1;
-  const float kalman_r = 1.0; 
+  const float kalman_r = 1.0;
+
+  static const int MA_WINDOW_SIZE = 5;  // Adjust this value as needed
+  int32_t ma_buffer[MA_WINDOW_SIZE];
+  int ma_index = 0;
+  int32_t ma_sum = 0;
+
+  int16_t IR_AC_Max = 20;
+  int16_t IR_AC_Min = -20;
+
+  int16_t IR_AC_Signal_Current = 0;
+  int16_t IR_AC_Signal_Previous;
+  int16_t IR_AC_Signal_min = 0;
+  int16_t IR_AC_Signal_max = 0;
+  int16_t IR_Average_Estimated;
+
+  int16_t positiveEdge = 0;
+  int16_t negativeEdge = 0;
+  int32_t ir_avg_reg = 0;
+
+  int16_t cbuf[32];
+  uint8_t offset = 0;
+ 
+
+  float alpha = 0.1;  // Smoothing factor (0-1), lower values mean more smoothing
+  float filtered_value = 0;
+
 
 
   // -- INTERNAL PRIVATE METHOD -- //
@@ -146,6 +172,51 @@ private:
     }
   }
 
+  bool checkBeat(int32_t sample) {
+    bool beatDetected = false;
+
+    // Apply high-pass filter to remove baseline
+
+    // Save current state
+    IR_AC_Signal_Previous = IR_AC_Signal_Current;
+
+    // Process next data sample
+    IR_Average_Estimated = averageDCEstimator(&ir_avg_reg, sample);
+    IR_AC_Signal_Current = lowPassFIRFilter(sample - IR_Average_Estimated);
+
+    // Detect positive zero crossing (rising edge)
+    if ((IR_AC_Signal_Previous < 0) & (IR_AC_Signal_Current >= 0)) {
+      IR_AC_Max = IR_AC_Signal_max;  // Adjust AC max and min
+      IR_AC_Min = IR_AC_Signal_min;
+
+      positiveEdge = 1;
+      negativeEdge = 0;
+      IR_AC_Signal_max = 0;
+
+      if ((IR_AC_Max - IR_AC_Min) > 15 && (IR_AC_Max - IR_AC_Min) < 1500) {
+        beatDetected = true;
+      }
+    }
+
+    // Detect negative zero crossing (falling edge)
+    if ((IR_AC_Signal_Previous > 0) & (IR_AC_Signal_Current <= 0)) {
+      positiveEdge = 0;
+      negativeEdge = 1;
+      IR_AC_Signal_min = 0;
+    }
+
+    // Find Maximum value in positive cycle
+    if (positiveEdge & (IR_AC_Signal_Current > IR_AC_Signal_Previous)) {
+      IR_AC_Signal_max = IR_AC_Signal_Current;
+    }
+
+    // Find Minimum value in negative cycle
+    if (negativeEdge & (IR_AC_Signal_Current < IR_AC_Signal_Previous)) {
+      IR_AC_Signal_min = IR_AC_Signal_Current;
+    }
+
+    return beatDetected;
+  }
 
 public:
   MAX30105 particleSensor;
@@ -159,7 +230,7 @@ public:
       this->rates[i] = 0;
   }
 
-  int kalmanFilter(int irvalue) {
+  long kalmanFilter(long irvalue) {
     kalman_error = kalman_error + kalman_q;
     float gain = kalman_error / (kalman_error + kalman_r);
     kalman_estimate = kalman_estimate + gain * (irvalue - kalman_estimate);
@@ -167,13 +238,31 @@ public:
     return round(kalman_estimate);
   }
 
+  int32_t movingAverageFilter(int32_t sample) {
+    ma_sum = ma_sum - ma_buffer[ma_index] + sample;
+    ma_buffer[ma_index] = sample;
+    ma_index = (ma_index + 1) % MA_WINDOW_SIZE;
+    return ma_sum / MA_WINDOW_SIZE;
+  }
+
+  float lowPassFilter(float input) {
+    filtered_value = alpha * input + (1 - alpha) * filtered_value;
+    return filtered_value;
+  }
+
 
   void get_sensor_value() {
     long irValue = particleSensor.getIR();
-    irValue = this->kalmanFilter(irValue);
-    Serial.println(irValue);
-    if (checkForBeat(irValue) == true) {
+
+    // Apply Butterworth low-pass filter to IR value
+    int32_t filteredIR = movingAverageFilter(irValue);
+
+//    Serial.print(irValue);
+    Serial.println(filteredIR);
+
+    if (checkBeat(filteredIR) == true) {
       // We sensed a beat!
+      Serial.println("sensed a beat");
       long delta = millis() - lastBeat;
       lastBeat = millis();
 

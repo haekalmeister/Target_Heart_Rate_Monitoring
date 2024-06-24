@@ -22,7 +22,7 @@ int count_above_threshold = 0;
 int count_below_threshold = 0;
 bool buzzer_status = false;
 const int motorPin = 17;
-const int threshold_count = 5; // Adjust as needed
+const int threshold_count = 3; // Adjust as needed
 bool motor_active = false;
 unsigned long lastUpdateTime = 0;
 const unsigned long updateInterval = 1000;
@@ -70,7 +70,6 @@ void setup() {
   oled.clear();
   startTime = millis();
 
-  // Initialize the BPM buffer
   for (int i = 0; i < MA_WINDOW_SIZE; i++) {
     bpmBuffer[i] = 0;
   }
