@@ -33,7 +33,7 @@ public:
   void start() {
     while (!display.begin(SSD1306_SWITCHCAPVCC, this->i2c_addr)) {
       Serial.println(F("SSD1306 allocation failed"));
-      // Add additional error handling here (e.g., loop a limited number of times, exit program)
+      
       delay(500);
     }
 
@@ -56,21 +56,21 @@ public:
     bool genderSelect = true;
 
     while (genderSelect) {
-        button4.setDebounceTime(DEBOUNCE_TIME); // button to toggle gender
-        button1.setDebounceTime(DEBOUNCE_TIME); // button to confirm selection
+        button4.setDebounceTime(DEBOUNCE_TIME); 
+        button1.setDebounceTime(DEBOUNCE_TIME); 
         button4.loop();
         button1.loop();
         int btn4State = button4.getState();
         int btn1State = button1.getState();
 
-        if (button4.isPressed()) { // Toggle gender
+        if (button4.isPressed()) { 
             gender = (gender == 0) ? 1 : 0;
         }
-        if (button1.isPressed()) { // Confirm selection
+        if (button1.isPressed()) { 
             genderSelect = false;
         }
 
-        // Update and display gender on OLED
+        
         display.clearDisplay();
         if (gender == 0) {
             display_male();
@@ -97,23 +97,23 @@ public:
       int btn3State = button3.getState();
       int btn2State = button2.getState();
       int btn1State = button1.getState();
-      if (button4.isPressed()) { // Button 1 pressed (add 1)
+      if (button4.isPressed()) {
       age++;
-      } else if (button3.isPressed()) { // Button 2 pressed (add 10)
+      } else if (button3.isPressed()) { 
       age += 10;
       } else if (button2.isPressed()){
         ESP.restart();
       }
-      if (button1.isPressed()) { // Button 3 pressed (proceed)
+      if (button1.isPressed()) { 
         ageSelect = false;
       }
 
-    // Update and display age on OLED
+    
       display.clearDisplay();
       display.setCursor(0, 0);
-      display.setTextSize(2); // Adjust text size as needed
+      display.setTextSize(2); 
       display.print("Your Age:");
-      display.setCursor(0, 16); // Adjust position as needed
+      display.setCursor(0, 16); 
       display.print(age);
       display.display();
       }
@@ -122,9 +122,9 @@ public:
   }
 
 void screen_bpm(int bpm, int thr_bottom, int thr_top, unsigned long elapsedTime, bool status) {
-    display.clearDisplay();  // Clear any previous content on the display
+    display.clearDisplay();  
 
-    // Convert elapsed time to minutes and seconds
+   
     unsigned int minutes = elapsedTime / 60;
     unsigned int seconds = elapsedTime % 60;
 
@@ -135,7 +135,7 @@ void screen_bpm(int bpm, int thr_bottom, int thr_top, unsigned long elapsedTime,
     display.println(bpm);
 
     // Display THR Zone
-    display.setCursor(0, 20);  // Adjust cursor position to below BPM
+    display.setCursor(0, 20);  
     display.setTextSize(1);
     display.print("THR: ");
     display.print(thr_bottom);
@@ -144,7 +144,7 @@ void screen_bpm(int bpm, int thr_bottom, int thr_top, unsigned long elapsedTime,
 
     // Display elapsed time
     if(status == true){
-    display.setCursor(0, 40);  // Adjust cursor position for elapsed time
+    display.setCursor(0, 40);  
     display.setTextSize(1.5);
     display.print(minutes);
     display.print("m ");
@@ -152,7 +152,7 @@ void screen_bpm(int bpm, int thr_bottom, int thr_top, unsigned long elapsedTime,
     display.println("s");
     display.print("Vibration ON");
     }else{
-    display.setCursor(0, 40);  // Adjust cursor position for elapsed time
+    display.setCursor(0, 40);  
     display.setTextSize(1.5);
     display.print(minutes);
     display.print("m ");
@@ -162,7 +162,7 @@ void screen_bpm(int bpm, int thr_bottom, int thr_top, unsigned long elapsedTime,
     }
     
 
-    display.display();  // Display the updated content
+    display.display();
 }
 
   void display_num(int x, int y, int num){
@@ -173,24 +173,24 @@ void screen_bpm(int bpm, int thr_bottom, int thr_top, unsigned long elapsedTime,
   }
 
 void display_thr(int thr, int thr_bottom, int thr_top) {
-    display.clearDisplay();  // Clear the display
+    display.clearDisplay();  
     
     display.setCursor(0, 0);
     display.setTextSize(1);
     display.print("RHR: ");
-    display.print(thr);  // Correctly display the RHR value
+    display.print(thr); 
 
     display.setCursor(0, 20);
-    display.setTextSize(1);  // Text size 1 for small text
+    display.setTextSize(1);  
     display.print("THR ZONE:");
 
-    display.setCursor(0, 40);  // Move cursor to a new line for THR values
-    display.setTextSize(2);    // Larger text size for the THR values
+    display.setCursor(0, 40); 
+    display.setTextSize(2);    
     display.print(thr_bottom);
     display.print(" - ");
     display.print(thr_top);
 
-    display.display();  // Display the updated content
+    display.display();
 }
 
   void calculating(){
